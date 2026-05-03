@@ -9,20 +9,27 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 def webhook():
     data = request.json
 
-    user_text = data["request"]["original_utterance"]
+    user_text = data.get("request", {}).get("original_utterance", "")
+
+    if not user_text:
+        user_text = "Привет"
 
     try:
         response = client.responses.create(
-    model="gpt-4.1-mini",
-    input=[
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": user_text}
+            model="gpt-4.1-mini",
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "input_text",
+                            "text": user_text
+                        }
+                    ]
+                }
             ]
-        }
-    ]
         )
+
         answer = response.output[0].content[0].text
 
     except Exception as e:
@@ -38,4 +45,4 @@ def webhook():
 
 @app.route("/", methods=["GET"])
 def index():
-    return "OK"
+    return "Alice GPT server is running"
