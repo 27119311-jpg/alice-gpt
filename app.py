@@ -13,10 +13,16 @@ def webhook():
 
     try:
         response = client.responses.create(
-            model="gpt-4.1-mini",
-            input=user_text
+    model="gpt-4.1-mini",
+    input=[
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": user_text}
+            ]
+        }
+    ]
         )
-
         answer = response.output[0].content[0].text
 
     except Exception as e:
