@@ -17,20 +17,18 @@ def webhook():
     try:
         response = client.responses.create(
             model="gpt-4.1-mini",
-            input=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "input_text",
-                            "text": user_text
-                        }
-                    ]
-                }
-            ]
+            input=user_text
         )
 
-        answer = response.output[0].content[0].text
+        answer = ""
+
+        for item in response.output:
+            for content in item.content:
+                if hasattr(content, "text"):
+                    answer += content.text
+
+        if not answer:
+            answer = "Не удалось получить ответ"
 
     except Exception as e:
         answer = "Ошибка: " + str(e)
@@ -45,4 +43,4 @@ def webhook():
 
 @app.route("/", methods=["GET"])
 def index():
-    return "Alice GPT server is running"
+    return "OK"
