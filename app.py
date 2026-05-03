@@ -6,10 +6,9 @@ from openai import OpenAI
 app = Flask(__name__)
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# ⚙️ Настройки памяти
 memory = {}
-MEMORY_TTL = 15 * 60   # 15 минут
-MAX_MESSAGES = 20      # максимум 20 сообщений
+MEMORY_TTL = 15 * 60
+MAX_MESSAGES = 20
 
 
 def get_user_id(data):
@@ -32,44 +31,36 @@ def webhook():
 
     now = time.time()
 
-    # Берём память пользователя
     user_memory = memory.get(user_id, {"updated_at": now, "messages": []})
 
-    # Если прошло больше 15 минут — очищаем
     if now - user_memory["updated_at"] > MEMORY_TTL:
         user_memory = {"updated_at": now, "messages": []}
 
     messages = user_memory["messages"]
 
-    # Добавляем сообщение пользователя
     messages.append({
         "role": "user",
         "content": user_text
     })
 
-    # Оставляем только последние 20 сообщений
     messages = messages[-MAX_MESSAGES:]
 
     try:
-        response = client.responses.create(
+        response = client.chat.completions.create(
             model="gpt-4.1-mini",
-            input=messages
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Ты полезный голосовой помощник. Отвечай по-русски, кратко и понятно."
+                }
+            ] + messages
         )
 
-        answer = ""
-
-        for item in response.output:
-            for content in item.content:
-                if hasattr(content, "text"):
-                    answer += content.text
-
-        if not answer:
-            answer = "Не удалось получить ответ"
+        answer = response.choices[0].message.content
 
     except Exception as e:
         answer = "Ошибка: " + str(e)
 
-    # Добавляем ответ ассистента в память
     messages.append({
         "role": "assistant",
         "content": answer
